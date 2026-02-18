@@ -1,5 +1,5 @@
 # En: Exchange IP service
-Simple IP exchange service
+Simple IP exchange service.
 
 Create a user, register a nickname, and obtain a key:
 
@@ -21,8 +21,8 @@ Remove the login:
 Create a folder to store data on the server, by default "users", with read and write permissions.
 
 
-# Ru: Exchange IP service
-Простая служба обмена IP
+# Ru: Сервис обмена IP адресами
+Простая служба обмена IP.
 
 
 Создать пользователя, регистрация ника и получение ключа:
