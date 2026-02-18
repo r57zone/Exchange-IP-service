@@ -1,88 +1,80 @@
 <?php
-//Simple exchange IP service
+/* Simple exchange IP service 
+En: Create / Ru: Создать IР https://example.com/exchange.php?method=create&user=testuser
+En: Update / Ru: Обновить IР https://example.com/exchange.php?method=set&user=testuser&key=<USER_KEY>
+En: Get IP / Ru: Получить IP Р https://example.com/exchange.php?method=get&user=testuser
+En: Remove / Ru: Удалить IР https://example.com/exchange.php?method=rm&user=testuser&key=9012
+*/
 
-//Setup / ���������
-$SaltLogins = "1234"; 
-$SaltKeys = "5678";
-$RootPassword = "9012";
-$LoginsFolderName = "logins";
-$LoginsFilesFormat = "php";
+$UsersDir = 'users';
+$RootPassword = 'T1Mc7sA9m4A3';
+$Salt = 'my_secret_salt';
+$DataExt = '.php';
 
-function GetIp() {
-	if (!empty($_SERVER['HTTP_CLIENT_IP'])) 
-		{
-			$ip = $_SERVER['HTTP_CLIENT_IP'];
-		}
-	elseif (!empty($_SERVER['HTTP_X_FORWARDED_FOR']))
-		{
-			$ip = $_SERVER['HTTP_X_FORWARDED_FOR'];
-		}
-	else{
-		$ip = $_SERVER['REMOTE_ADDR'];
-		}
-	return $ip;
+if (!is_dir($UsersDir))
+	mkdir($UsersDir, 0755, true);
+
+// En: Only a-z A-Z 0-9 _ -)
+function SafeUser($username) {
+	return substr(preg_replace('/[^a-zA-Z0-9_\-]/', '', $username), 0, 22);
 }
 
-$SetLoginData = trim(substr(htmlspecialchars($_GET['set']), 0, 22));
-$GetLoginData = trim(substr(htmlspecialchars($_GET['get']), 0, 22));
-$RemoveLogin = trim(substr(htmlspecialchars($_GET['rm']), 0, 22));
-$Key = trim(substr(htmlspecialchars($_GET['key']), 0, 32));
-
-if ($SetLoginData != "") {
-	$Filename = $LoginsFolderName . "/" . md5($SetLoginData . $SaltLogins) . "." . $LoginsFilesFormat;
-
-	if (!file_exists($Filename)) {
-		$f = fopen($Filename, "w");
-		fwrite($f, md5($SetLoginData . $SaltKeys) . " " . GetIp()); 
-		fclose($f);
-		echo md5($SetLoginData . $SaltKeys);
-	} else {
-		if ($Key != "") {
-			$f = fopen($Filename, "r");
-			$buff = fread($f, filesize($Filename));
-			$buff = explode(" ", $buff);
-			fclose($f);
-			if ($buff[0] == $Key) {
-				$f = fopen($Filename, "w");
-				fwrite($f, md5($SetLoginData . $SaltKeys) . " " . GetIp()); 
-				fclose($f);
-				echo "Updated";
-			} else {
-				echo "Invalid key";
-			}
-		} else {
-			echo "Invalid key";
-		}
-	}
+// En: Get real client IP address / Ru: Получить реальный IP клиента
+function GetIP() {
+	if (!empty($_SERVER['HTTP_CLIENT_IP']))
+		return $_SERVER['HTTP_CLIENT_IP'];
+	else if (!empty($_SERVER['HTTP_X_FORWARDED_FOR']))
+		return $_SERVER['HTTP_X_FORWARDED_FOR'];
+	else
+		return $_SERVER['REMOTE_ADDR'];
 }
 
-if ($GetLoginData != "") {
-		$Filename = $LoginsFolderName . "/" . md5($GetLoginData . $SaltLogins) . "." . $LoginsFilesFormat;
-		if (file_exists($Filename)) {
-			$f = fopen($Filename, "r");
-			$buff = fread($f, filesize($Filename));
-			$buff = explode(" ", $buff);
-			fclose($f);
-			echo $buff[1];
-		} else {
-			echo "Invalid login";
-		}
-}
+$method = isset($_GET['method']) ? $_GET['method'] : '';
+$user = isset($_GET['user']) ? SafeUser($_GET['user']) : '';
+$key = isset($_GET['key']) ? $_GET['key'] : '';
+$file = $UsersDir . '/' . $user . $DataExt;
 
-if ($RemoveLogin != "") {
-		if ($Key == $RootPassword) {
-		$Filename = $LoginsFolderName . "/" . md5($RemoveLogin . $SaltLogins) . "." . $LoginsFilesFormat;
-		if (file_exists($Filename)) {
-			unlink($_SERVER['DOCUMENT_ROOT'] . "/" . $Filename);
-			echo "Login deleted";
-		} else {
-			echo "Invalid login";
-		}
-	} else {
-		echo "Invalid key";
-	}
-}
+switch ($method) {
+	case 'create':
+		if ($user == '') exit('invalid user');
+		if (file_exists($file)) exit('user already exists');
+		$new_key = md5($user . $Salt);
+		file_put_contents($file,  $new_key . ' 0.0.0.0', LOCK_EX);
 
-if ($SetLoginData == "" and $GetLoginData ==  "" and $RemoveLogin == "" and $Key == "")
-	echo "Exchange IP service";
+		echo $new_key;
+	break;
+
+	case 'set':
+		if ($user == '' || $key == '') exit('invalid request');
+		if (!file_exists($file)) exit('user not exists');
+
+		list($stored_key,) = explode(' ', file_get_contents($file));
+		if ($stored_key != $key) exit('invalid key');
+		file_put_contents($file, $stored_key . ' ' . GetIP(), LOCK_EX);
+		
+		echo 'updated';
+	break;
+
+
+	case 'get':
+		if ($user == '' || !file_exists($file)) {
+			echo '0.0.0.0';
+			break;
+		}
+		list(, $ip) = explode(' ', file_get_contents($file));
+		echo $ip;
+	break;
+
+	case 'rm':
+		if ($key != $RootPassword) exit('invalid key');
+		if ($user == '' || !file_exists($file)) exit('user not exists');
+
+		unlink($file);
+		echo 'removed';
+	break;
+
+
+	default:
+		echo 'Exchange IP service';
+}
 ?>
