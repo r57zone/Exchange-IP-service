@@ -1,19 +1,21 @@
 # En: Exchange IP service
 Simple IP exchange service.
 
-Create a user, register a nickname, and obtain a key:
+## API Methods
+
+* Create a user, register a nickname, and obtain a key:
 
 ```exip.php?method=create&user=testuser```
 
-Update the IP address:
+* Update the IP address:
 
 ```exip.php?method=set&user=testuser&key=<USER_KEY>```
 
-Get the IP address:
+* Get the IP address:
 
 ```exip.php?method=get&user=testuser```
 
-Remove the login:
+* Remove the login:
 
 ```exip.php?method=rm&user=testuser&key=<RootPassword>```
 
@@ -25,22 +27,24 @@ Create a folder to store data on the server, by default "users", with read and w
 Простая служба обмена IP.
 
 
-Создать пользователя, регистрация ника и получение ключа:
+## Методы API
+
+* Создать пользователя, регистрация ника и получение ключа:
 
 ```exip.php?method=create&user=testuser```
 
 
-Обновление IP адреса:
+* Обновление IP адреса:
 
 ```exip.php?method=set&user=testuser&key=<USER_KEY>```
 
 
-Получение IP адреса:
+* Получение IP адреса:
 
 ```exip.php?method=get&user=testuser```
 
 
-Удаление логина:
+* Удаление логина:
 
 ```exip.php?method=rm&user=testuser&key=<RootPassword>```
 
